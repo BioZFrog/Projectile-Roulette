@@ -5,7 +5,7 @@ print("""
     Projectile Roulette
     =================\n""")
 
-items = ["Beer", "Hand Saw", "HandCuffs", "Cigarette"]
+items = ["Beer", "Hand Saw", "HandCuffs", "Cigarette", "Inverter", "Expired Medicine", "Adrenaline"]
 chambers = 6  
 
 name = input("Name: ")
@@ -31,7 +31,6 @@ def player_turn_action():
     global player_health
     global shotgun_damage
     global player_items
-    global dealer_handcuffs_used
 
     if not player_shotgun:
         print("No more shots left in the shotgun!")
@@ -40,7 +39,8 @@ def player_turn_action():
     print(f"\n{name}'s shotgun: {player_shotgun}")
     print(f"{name}'s turn: ({player_items}) Choose an action or item: ", end="")
     player_choice = input().strip()
-
+    
+    # Shotgun
     if player_choice == "Shotgun":
         if not player_shotgun:
             print("No more shots left in the shotgun!")
@@ -66,12 +66,14 @@ def player_turn_action():
     elif player_choice in player_items:
         player_items.remove(player_choice)
 
+        # Beer
         if player_choice == "Beer":
             if player_shotgun:
                 removed_item = player_shotgun[0]
                 player_shotgun.pop(0)
                 print(f"Removed item from {name}'s shotgun: {removed_item}")
 
+        # Hand Saw
         elif player_choice == "Hand Saw":
             if player_shotgun and player_shotgun[0] == "Live Round":
                 print(f"Shotgun damage increased to 2 due to Hand Saw!")
@@ -86,17 +88,101 @@ def player_turn_action():
             if player_shotgun:
                 player_shotgun.pop(0)
 
+        # Inverter
+        elif player_choice == "Inverter":
+            if player_shotgun[0] == "Live Round":
+                player_shotgun[0] = "Blank"
+            elif player_shotgun[0] == "Blank":
+                player_shotgun[0] = "Live Round"
+
+        # HandCuffs
         elif player_choice == "HandCuffs":
-            if "HandCuffs" in player_items:
-                player_items.remove("HandCuffs")
-                return "HandCuffs"
-    
-        elif player_choice == "Cigarette" and player_health < 4:
-            if player_health < 4:
-                player_health += 1
-                print(f"{name}'s Health after Cigarette: {player_health}")
+            return "HandCuffs"
+        
+        # Adrenaline
+        elif player_choice == "Adrenaline":
+            steal = input(f"\nPick one of Dealer's items: {dealer_items} ").strip()
+
+            if steal in dealer_items:
+                if steal == "Adrenaline":
+                    print("Can't Use That!")
+
+                elif steal == "Inverter":
+                    dealer_items.remove("Inverter")
+                    if player_shotgun[0] == "Live Round":
+                        player_shotgun[0] = "Blank"
+                    elif player_shotgun[0] == "Blank":
+                        player_shotgun[0] = "Live Round"
+
+                elif steal == "HandCuffs":
+                    dealer_items.remove("HandCuffs")
+                    return "HandCuffs"
+                
+                elif steal == "Hand Saw":
+                    dealer_items.remove("Hand Saw")
+                    if player_shotgun and player_shotgun[0] == "Live Round":
+                        print(f"Shotgun damage increased to 2 due to Hand Saw!")
+                        shotgun_damage = 2
+                        dealer_health -= shotgun_damage
+                        if dealer_health < 0:
+                            dealer_health = 0
+                        print(f"Dealer's Health after Hand Saw: {dealer_health}")
+                    else:
+                        shotgun_damage = 1
+                        print("Can't Use That!")
+                    if player_shotgun:
+                        player_shotgun.pop(0)
+
+                elif steal == "Beer":
+                    if player_shotgun:
+                        removed_item = player_shotgun[0]
+                        player_shotgun.pop(0)
+                        print(f"Removed item from {name}'s shotgun: {removed_item}")
+
+                elif steal == "Expired Medicine":
+                    chances = [4,7]
+                    percentage = [60, 40]
+                    
+                    player_health_change = random.choices(chances, weights=percentage, k=1)[0]
+                    dealer_items.remove("Expired Medicine")
+
+                    if player_health_change == 7:
+                        print(f"{name} gained 2 lives because of Expired Medicine!")
+                        player_health += 2
+                    elif player_health_change == 4:
+                        print(f"{name} lost 1 life because of Expired Medicine!")
+                        player_health -= 1
+                    print(f"{name}'s Health after Expired Medicine: {player_health}")
+
+                elif steal == "Cigarette":
+                    dealer_items.remove("Cigarette")
+                    if player_health < 4:
+                        player_health += 1
+                        print(f"{name}'s Health after Cigarette: {player_health}")
+                    else:
+                        print("Can't Use That!")
             else:
-                print("Can't Use That!")
+                print("Invalid Input!")
+
+        # Expired Medicine
+        elif player_choice == "Expired Medicine":
+            chances = [4,7]
+            percentage = [60, 40]
+            
+            player_health_change = random.choices(chances, weights=percentage, k=1)[0]
+
+            if player_health_change == 7:
+                print(f"{name} gained 2 lives because of Expired Medicine!")
+                player_health += 2
+            elif player_health_change == 4:
+                print(f"{name} lost 1 life because of Expired Medicine!")
+                player_health -= 1
+            print(f"{name}'s Health after Expired Medicine: {player_health}")
+
+        # Cigarette
+        elif player_choice == "Cigarette" and player_health < 4:
+            player_health += 1
+            print(f"{name}'s Health after Cigarette: {player_health}")
         else:
             print("Invalid Input!")
     
@@ -108,7 +194,6 @@ def dealer_turn_action():
     global player_health
     global shotgun_damage
     global dealer_items
-    global player_handcuffs_used
 
     if not dealer_shotgun:
         print("No more shots left in the shotgun!")
@@ -121,6 +206,7 @@ def dealer_turn_action():
     
     print(f"\nDealer's turn: Dealer chooses {dealer_choice}")
 
+    # Shotgun
     if dealer_choice == "Shotgun":
         if not dealer_shotgun:
             print("No more shots left in the shotgun!")
@@ -146,13 +232,15 @@ def dealer_turn_action():
 
     elif dealer_choice in dealer_items:
         dealer_items.remove(dealer_choice)
-
+        
+        # Beer
         if dealer_choice == "Beer":
             if dealer_shotgun:
                 removed_item = dealer_shotgun[0]
                 dealer_shotgun.pop(0)
                 print(f"Removed item from dealer's shotgun: {removed_item}")
-
+        
+        # Hand Saw
         elif dealer_choice == "Hand Saw":
             if dealer_shotgun and dealer_shotgun[0] == "Live Round":
                 print(f"Shotgun damage increased to 2 due to Hand Saw!")
@@ -167,61 +255,81 @@ def dealer_turn_action():
             if dealer_shotgun:
                 dealer_shotgun.pop(0)
 
+        # Inverter
+        elif dealer_choice == "Inverter":
+            if dealer_shotgun[0] == "Live Round":
+                dealer_shotgun[0] = "Blank"
+            elif dealer_shotgun[0] == "Blank":
+                dealer_shotgun[0] = "Live Round"
+
+        # HandCuffs
         elif dealer_choice == "HandCuffs":
-            if "HandCuffs" in dealer_items:
-                dealer_items.remove("HandCuffs")
-                return "HandCuffs"
-            else:
-                print("Dealer has already used HandCuffs.")
-    
+            return "HandCuffs"
+
+        # Adrenaline
+        elif dealer_choice == "Adrenaline":
+            if "Expired Medicine" in player_items:
+                player_items.remove("Expired Medicine")
+                dealer_items.append("Expired Medicine")
+                chances = [4,7]
+                percentage = [60, 40]
+                
+                dealer_health_change = random.choices(chances, weights=percentage, k=1)[0]
+
+                if dealer_health_change == 7:
+                    print("Dealer gained 2 lives because of Expired Medicine!")
+                    dealer_health += 2
+                elif dealer_health_change == 4:
+                    print("Dealer lost 1 life because of Expired Medicine!")
+                    dealer_health -= 1
+                print(f"Dealer's Health after Expired Medicine: {dealer_health}")
+
+        # Expired Medicine
+        elif dealer_choice == "Expired Medicine":
+            chances = [4,7]
+            percentage = [60, 40]
+            
+            dealer_health_change = random.choices(chances, weights=percentage, k=1)[0]
+
+            if dealer_health_change == 7:
+                print("Dealer gained 2 lives because of Expired Medicine!")
+                dealer_health += 2
+            elif dealer_health_change == 4:
+                print("Dealer lost 1 life because of Expired Medicine!")
+                dealer_health -= 1
+            print(f"Dealer's Health after Expired Medicine: {dealer_health}")
+
+        # Cigarette
         elif dealer_choice == "Cigarette" and dealer_health < 4:
             dealer_health += 1
             print(f"Dealer's Health after Cigarette: {dealer_health}")
-    
+        else:
+            print("Invalid Input!")
+
     return None
 
-player_handcuffs_used = False
-dealer_handcuffs_used = False
-current_turn = "player"
-
-
-if player_health < 0:
-        player_health = 0
-
-if dealer_health < 0:
-        dealer_health = 0
+def check_health():
+    if player_health <= 0:
+        print("Dealer wins!")
+        return True
+    elif dealer_health <= 0:
+        print(f"{name} wins!")
+        return True
+    return False
 
 while player_health > 0 and dealer_health > 0:
-    if current_turn == "player":
-        player_choice = player_turn_action()
-        if player_choice == "HandCuffs":
-            print(f"{name} used HandCuffs! Skipping dealer's turn and taking another turn.")
-            dealer_handcuffs_used = True
-            continue 
+    handcuffs = player_turn_action()
+    if check_health():
+        break
 
-        if player_health <= 0:
-            print(f"{name} has been eliminated!")
-            break
-        elif dealer_health <= 0:
-            print(f"Dealer has been eliminated!")
-            break
-        
-        current_turn = "dealer"
-        
-    elif current_turn == "dealer":
-        dealer_choice = dealer_turn_action()
-        if dealer_choice == "HandCuffs":
-            print("Dealer used HandCuffs! Skipping player's turn and taking another turn.")
-            player_handcuffs_used = True
-            continue 
+    if handcuffs == "HandCuffs":
+        print(f"\n{name} used HandCuffs to skip the dealer's turn!")
+        continue
 
-        if player_health <= 0:
-            print(f"{name} has been eliminated!")
-            break
-        elif dealer_health <= 0:
-            print(f"Dealer has been eliminated!")
-            break
-        
-        current_turn = "player"
+    handcuffs = dealer_turn_action()
+    if check_health():
+        break
 
-print("The game has ended.")
+    if handcuffs == "HandCuffs":
+        print("Dealer used HandCuffs to skip your turn!")
+        continue
