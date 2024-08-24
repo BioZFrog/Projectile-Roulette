@@ -16,6 +16,10 @@ dealer_items = random.choices(items, k=8)
 player_health = 5
 dealer_health = 5
 
+player_items_finished = False
+dealer_items_finished = False
+
+
 shotgun_damage = 1
 
 def generate_shotgun(chambers):
@@ -31,15 +35,19 @@ def player_turn_action():
     global player_health
     global shotgun_damage
     global player_items
+    global player_items_finished
+        
 
     if not player_shotgun:
         print("No more shots left in the shotgun!")
         return
 
-    print(f"\n{name}'s shotgun: {player_shotgun}")
-    print(f"{name}'s turn: ({player_items}) Choose an action or item: ", end="")
-    player_choice = input().strip()
-    
+    if player_items:
+        print(f"\n{name}'s shotgun: {player_shotgun}")
+        print(f"{name}'s turn: ({player_items}) Choose an action or item: ", end="")
+        player_choice = input().strip()
+    elif not player_items:
+        player_items_finished = True
     # Shotgun
     if player_choice == "Shotgun":
         if not player_shotgun:
@@ -52,6 +60,8 @@ def player_turn_action():
                 print(f"{name} fired a Live Round on Themselves!")
                 player_health -= shotgun_damage
                 print(f"{name}'s Health: {player_health}")
+                if player_health < 0:
+                    player_health = 0
             else:
                 print(f"{name} fired a Blank on Themselves!")
         elif shoot == "Dealer":
@@ -59,6 +69,8 @@ def player_turn_action():
                 print(f"{name} fired a Live Round on Dealer!")
                 dealer_health -= shotgun_damage
                 print(f"Dealer's Health: {dealer_health}")
+                if dealer_health < 0:
+                    dealer_health = 0
             else:
                 print(f"{name} fired a Blank on Dealer!")
         player_shotgun.pop(0)
@@ -194,6 +206,7 @@ def dealer_turn_action():
     global player_health
     global shotgun_damage
     global dealer_items
+    global dealer_items_finished
 
     if not dealer_shotgun:
         print("No more shots left in the shotgun!")
@@ -202,7 +215,11 @@ def dealer_turn_action():
     if dealer_shotgun[0] == "Live Round" and "Hand Saw" in dealer_items:
         dealer_choice = "Hand Saw"
     else:
-        dealer_choice = random.choice(dealer_items)
+        if dealer_items:
+            dealer_choice = random.choice(dealer_items)
+        elif not dealer_items:
+            dealer_items_finished = True
+
     
     print(f"\nDealer's turn: Dealer chooses {dealer_choice}")
 
@@ -217,6 +234,8 @@ def dealer_turn_action():
             if dealer_shotgun[0] == "Live Round":
                 print(f"Dealer fired a Live Round on {name}!")
                 player_health -= shotgun_damage
+                if player_health < 0:
+                    player_health = 0
                 dealer_shotgun.pop(0)
             else:
                 print(f"Dealer fired a Blank on {name}!")
@@ -225,6 +244,8 @@ def dealer_turn_action():
             if dealer_shotgun[0] == "Live Round":
                 print(f"Dealer fired a Live Round on Themselves!")
                 dealer_health -= shotgun_damage
+                if dealer_health < 0:
+                    dealer_health = 0
                 dealer_shotgun.pop(0)
             else:
                 print(f"Dealer fired a Blank on Themselves!")
@@ -317,9 +338,24 @@ def check_health():
         return True
     return False
 
+def check_items():
+    if player_items_finished:
+        print("Game Ended")
+        print(f"{name}'s Health: {player_health}")
+        print(f"Dealer's Health: {dealer_health}")
+        return True
+    elif dealer_items_finished:
+        print("Game Ended")
+        print(f"{name}'s Health: {player_health}")
+        print(f"Dealer's Health: {dealer_health}")
+        return True
+    return False
+
 while player_health > 0 and dealer_health > 0:
     handcuffs = player_turn_action()
     if check_health():
+        break
+    if check_items():
         break
 
     if handcuffs == "HandCuffs":
